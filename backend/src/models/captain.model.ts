@@ -1,8 +1,46 @@
-import mongoose from "mongoose";
+import mongoose, { Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-const captainSchema = new mongoose.Schema(
+// 1. Shape of the document
+interface IVehicle {
+  color: string;
+  plate: string;
+  capacity: string;
+  vehicleType: "car" | "motorcycle" | "auto";
+}
+
+interface ILocation {
+  ltd?: number;
+  lng?: number;
+}
+
+interface ICaptain {
+  fullName: {
+    firstName: string;
+    lastName?: string;
+  };
+  email: string;
+  password: string;
+  socketId?: string;
+  status: "active" | "inactive";
+  vehical: IVehicle;
+  location?: ILocation;
+}
+
+// 2. Methods on instances
+interface ICaptainMethods {
+  generateAuthToken(): string;
+  comparePassword(password: string): Promise<boolean>;
+}
+
+// 3. Statics on the model
+interface CaptainModel extends Model<ICaptain, {}, ICaptainMethods> {
+  hashPassword(password: string): Promise<string>;
+}
+
+// 4. Schema
+const captainSchema = new mongoose.Schema<ICaptain, CaptainModel, ICaptainMethods>(
   {
     fullName: {
       firstName: { type: String, required: true },
@@ -35,19 +73,21 @@ const captainSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// 5. Instance methods
 captainSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this._id }, process.env.JWT_SECRET!, {
+  return jwt.sign({ _id: this._id }, process.env.JWT_SECRET!, {
     expiresIn: "24h",
   });
-  return token;
 };
 
 captainSchema.methods.comparePassword = async function (password: string) {
-  return await bcrypt.compare(password, this.password);
+  return bcrypt.compare(password, this.password);
 };
 
-captainSchema.statics.hashPassword = async function (password) {
-  return await bcrypt.hash(password, 10);
+// 6. Statics
+captainSchema.statics.hashPassword = async function (password: string) {
+  return bcrypt.hash(password, 10);
 };
 
-export const Captain = mongoose.model("Captain", captainSchema);
+// 7. Model
+export const Captain = mongoose.model<ICaptain, CaptainModel>("Captain", captainSchema);
