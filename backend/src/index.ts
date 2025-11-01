@@ -27,7 +27,7 @@ app.use("/maps",mapRouter)
 app.use("/rides",rideRouter)
 
 app.get("/", (req, res) => {
-    res.send("One piece is Real!");
+    res.send("One piece is a seasonal anime now");
 });
 
 app.listen(PORT, () => {
